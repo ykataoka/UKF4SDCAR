@@ -136,13 +136,13 @@ int main()
 	      estimations.push_back(estimate);
 
 	      VectorXd RMSE = tools.CalculateRMSE(estimations, ground_truth);
-	  
-	      // // output the NIS values
-	      // if (meas_package.sensor_type_ == MeasurementPackage::LASER) {
-	      //   out_file_ << ukf.NIS_laser_ << "\n";
-	      // } else if (meas_package.sensor_type_ == MeasurementPackage::RADAR) {
-	      //   out_file_ << ukf.NIS_radar_ << "\n";
-	      // }
+	      
+	      // output the NIS values
+	      if (meas_package.sensor_type_ == MeasurementPackage::LASER) {
+	        out_file_ << ukf.NIS_laser_ << "\n";
+	      } else if (meas_package.sensor_type_ == MeasurementPackage::RADAR) {
+	        out_file_ << ukf.NIS_radar_ << "\n";
+	      }
 
 	      json msgJson;
 	      msgJson["estimate_x"] = p_x;

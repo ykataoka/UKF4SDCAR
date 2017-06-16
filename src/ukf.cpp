@@ -29,10 +29,10 @@ UKF::UKF() {
   P_ = MatrixXd(5, 5);
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
-  std_a_ = 3; // NEEDS to be adjusted
+  std_a_ = 5; // NEEDS to be adjusted  1 := 3.6[km/h]/s
 
   // Process noise standard deviation yaw acceleration in rad/s^2
-  std_yawdd_ = 0.1; // NEEDS to be adjusted
+  std_yawdd_ = 0.2; // NEEDS to be adjusted 1 :=57.32[deg/s]/s
 
   // Laser measurement noise standard deviation position1 in m
   std_laspx_ = 0.15;
@@ -92,7 +92,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 
     // first measurement
     x_ = VectorXd(5);
-    x_ << 1, 1, 1, 1, 1;
+    x_ << 0, 0, 0, 0, 0;  // does not work with 1s
 
     // RADAR
     if (meas_package.sensor_type_ == MeasurementPackage::RADAR) {
@@ -125,12 +125,44 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 
     // state covariance matrix
     P_ = MatrixXd(5, 5);
-    P_ << 1, 0, 0, 0, 0,
-      0, 1, 0, 0, 0,
-      0, 0, 1, 0, 0,
-      0, 0, 0, 1, 0,
-      0, 0, 0, 0, 1;
+    // P_ << std_laspx_*std_laspx_, 0, 0, 0, 0,
+    //   0, std_laspy_*std_laspy_, 0, 0, 0,
+    //   0, 0, std_radr_*std_radr_, 0, 0,
+    //   0, 0, 0, std_radphi_*std_radphi_, 0,
+    //   0, 0, 0, 0, std_radrd_*std_radrd_;
+    double dt = 0.1;
+    //    double stdx = 0.5*dt*dt*cos(x_(3))*std_a_;
+    //    double stdy = 0.5*dt*dt*sin(x_(3))*std_a_;
+    double stdx = std_laspx_;
+    double stdy = std_laspy_;
+    double stdv = dt*std_a_;
+    double stdpsi = 0.5*dt*dt*std_yawdd_;
+    double stdpsid = dt*std_yawdd_;
 
+    // double stdx = std_laspx_ + 0.5*dt*dt*cos(x_(3))*std_a_;
+    // double stdy = std_laspy_ + 0.5*dt*dt*sin(x_(3))*std_a_;
+    // double stdv = dt*std_a_;
+    // double stdpsi = 0.5*dt*dt*std_yawdd_;
+    // double stdpsid = dt*std_yawdd_;
+    // P_ << 1, 0, 0, 0, 0,
+    //   0, 1, 0, 0, 0,
+    //   0, 0, 1, 0, 0,
+    //   0, 0, 0, 1, 0,
+    //   0, 0, 0, 0, 1;
+    P_ << stdx, 0, 0, 0, 0,
+      0, stdy, 0, 0, 0,
+      0, 0, stdv, 0, 0,
+      0, 0, 0, stdpsi, 0,
+      0, 0, 0, 0, stdpsid;
+    //    P_ << stdx*stdx, 0, 0, 0, 0,
+    //      0, stdy*stdy, 0, 0, 0,
+    //      0, 0, stdv*stdv, 0, 0,
+    //      0, 0, 0, stdpsi*stdpsi, 0,
+    //      0, 0, 0, 0, stdpsid*stdpsid;
+
+    cout << "x_ = " << x_ << endl;
+    cout << "P_ = " << P_ << endl;
+    
     // done initializing, no need to predict or update
     time_us_ = meas_package.timestamp_;
     is_initialized_ = true;
@@ -142,7 +174,6 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
   /*****************************************************************************
    *  Prediction (State Estimation using Vehicle Dynamics)
    ****************************************************************************/
-
   // update the state transition matrix F according to the new elapsed time.
   double dt = (meas_package.timestamp_ - time_us_) / 1000000.0;
   time_us_ = meas_package.timestamp_;
